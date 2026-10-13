@@ -1,0 +1,52 @@
+{
+  "name": "stash-wallet-sdk",
+  "version": "1.0.0",
+  "description": "Official TypeScript SDK for integrating Stash Wallet browser extension into third-party dApps",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./protocol": {
+      "types": "./dist/protocol/index.d.ts",
+      "import": "./dist/protocol/index.js",
+      "require": "./dist/protocol/index.cjs"
+    },
+    "./browser": {
+      "types": "./dist/browser.d.ts",
+      "import": "./dist/browser.js",
+      "require": "./dist/browser.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "rollup -c && tsc -p tsconfig.build.json --emitDeclarationOnly",
+    "test": "vitest run",
+    "type-check": "tsc --noEmit",
+    "prepack": "npm run build"
+  },
+  "keywords": [
+    "stash-wallet",
+    "bitcoin",
+    "rgb",
+    "lightning",
+    "wallet",
+    "sdk"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@rollup/plugin-typescript": "^12.1.2",
+    "rollup": "^4.34.8",
+    "tslib": "^2.8.1",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5"
+  }
+}
