@@ -38,7 +38,6 @@ import {
   MSG_REQUEST_AUTH_SIGNATURE,
   MSG_REQUEST_NODE_CREDENTIAL,
   MSG_REQUEST_NODE_GRANT_SIGNATURE,
-  MSG_REQUEST_LSP_DELEGATION,
   MSG_REQUEST_LSP_REVOKE,
   MSG_REQUEST_SWITCH_NETWORK,
   MSG_SEND_BITCOIN,
@@ -72,8 +71,6 @@ import type {
   PayLightningInvoiceResponse,
   ProviderCapabilities,
   RgbUtxoItem,
-  LspDelegationRequest,
-  LspDelegationResponse,
   SendBitcoinRequest,
   SendBitcoinResult,
   SendRGBRequest,
@@ -165,15 +162,6 @@ export class StashWalletClient {
       MSG_REQUEST_SWITCH_NETWORK,
       { network },
     );
-  }
-
-  requestLspDelegation(params: LspDelegationRequest): Promise<LspDelegationResponse> {
-    const normalized: LspDelegationRequest = {
-      ...params,
-      recipient_pubkey: params.recipient_pubkey ?? params.platform_pubkey,
-      service_name: params.service_name ?? params.platform,
-    };
-    return this._transport.send(MSG_REQUEST_LSP_DELEGATION, normalized);
   }
 
   /** Currently NOT_SUPPORTED: provider revocation must not revoke Cloud idle protection. */

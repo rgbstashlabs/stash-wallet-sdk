@@ -75,24 +75,6 @@ describe('StashWalletClient', () => {
     expect(transport.send).toHaveBeenNthCalledWith(2, 'REQUEST_AUTH_SIGNATURE', v2);
   });
 
-  it('normalizes LSP delegation aliases', async () => {
-    const transport = mockTransport((_type, payload) => payload);
-    const client = new StashWalletClient(transport);
-    await client.requestLspDelegation({
-      platform_pubkey: 'aa',
-      platform: 'rgbdex',
-      expiry_hours: 24,
-    });
-    expect(transport.send).toHaveBeenCalledWith(
-      'REQUEST_LSP_DELEGATION',
-      expect.objectContaining({
-        recipient_pubkey: 'aa',
-        service_name: 'rgbdex',
-        platform_pubkey: 'aa',
-      }),
-    );
-  });
-
   it('TransportError preserves known codes', () => {
     const err = new TransportError('INVALID_PARAMETER', 'bad');
     expect(err.code).toBe('INVALID_PARAMETER');

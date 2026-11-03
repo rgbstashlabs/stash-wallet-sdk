@@ -148,35 +148,6 @@ export interface NodeCredentialResponse {
   auth_pubkey: string;
 }
 
-export interface LspDelegationRegistrationParams {
-  token_ticker?: string;
-  custom_fee_rate_percent?: number | string;
-  channel_hourly_fee_sats?: number;
-  p_ceiling?: number | string;
-  p_floor?: number | string;
-  swap_fee_lsp_percent?: number | string;
-  swap_fee_platform_percent?: number | string;
-  channel_fee_lsp_percent?: number | string;
-  channel_fee_platform_percent?: number | string;
-}
-
-export interface LspDelegationRequest {
-  /** Trusted platform pubkey (hex). Alias for legacy recipient_pubkey. */
-  platform_pubkey?: string;
-  recipient_pubkey?: string;
-  /** Human-readable platform label. Alias for legacy service_name. */
-  platform?: string;
-  service_name?: string;
-  expiry_hours?: number;
-  registration?: LspDelegationRegistrationParams;
-}
-
-export interface LspDelegationResponse {
-  encrypted_package: string;
-  signature: string;
-  signer_pubkey: string;
-}
-
 export interface HubChannelsRequest {
   hub_node_id?: string;
   include_pending?: boolean;
