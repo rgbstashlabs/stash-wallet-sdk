@@ -59,3 +59,19 @@ export class TransportError extends Error {
 export function isKnownErrorCode(code: string): boolean {
   return KNOWN_CODES.has(code);
 }
+
+/**
+ * Extract the stable error code from an extension / provider error string.
+ *
+ * The bridge sometimes appends a detail suffix
+ * (`INVALID_PARAMETER: contract_id and amount are required`). Only the leading
+ * token is the code; everything after the colon is human-readable detail.
+ *
+ * Both transports call this so a page sees the same `TransportError.code`
+ * regardless of which path delivered the error.
+ */
+export function extractErrorCode(message: string | undefined | null): string | undefined {
+  if (typeof message !== 'string') return undefined;
+  const token = message.split(':', 1)[0].trim();
+  return token || undefined;
+}

@@ -5,7 +5,8 @@
  */
 
 import type { Transport, TransportOptions } from './base';
-import { TransportError } from '../errors';
+import { TransportError, extractErrorCode } from '../errors';
+import { notifyAuthRequired, REASON_ORIGIN_NOT_AUTHORIZED } from './auth-required';
 import type { StashWalletProvider } from '../provider';
 
 interface ProviderWindow {
@@ -76,14 +77,30 @@ export class InjectedProviderTransport implements Transport {
     payload?: TPayload,
   ): Promise<TResult> {
     const provider = this._provider();
-    const result = await Promise.race([
-      provider.request({ method: type, params: payload }),
-      new Promise<never>((_, reject) => {
-        setTimeout(() => {
-          reject(new TransportError('TIMEOUT', `Request ${type} timed out after ${this._timeoutMs}ms`));
-        }, this._timeoutMs);
-      }),
-    ]);
-    return result as TResult;
+    try {
+      const result = await Promise.race([
+        provider.request({ method: type, params: payload }),
+        new Promise<never>((_, reject) => {
+          setTimeout(() => {
+            reject(
+              new TransportError('TIMEOUT', `Request ${type} timed out after ${this._timeoutMs}ms`),
+            );
+          }, this._timeoutMs);
+        }),
+      ]);
+      return result as TResult;
+    } catch (error) {
+      // The provider bridge rejects with plain Errors, so map the message code here:
+      // callers rely on TransportError.code regardless of the transport in use.
+      if (error instanceof TransportError) throw error;
+      const code = extractErrorCode(
+        error instanceof Error ? error.message : typeof error === 'string' ? error : undefined,
+      );
+      notifyAuthRequired(code);
+      throw new TransportError(
+        code === REASON_ORIGIN_NOT_AUTHORIZED ? REASON_ORIGIN_NOT_AUTHORIZED : code ?? 'UNKNOWN',
+        error instanceof Error ? error.message : undefined,
+      );
+    }
   }
 }

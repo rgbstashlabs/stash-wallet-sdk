@@ -179,6 +179,174 @@ export interface GenerateSellInvoiceResult {
   payment_hash: string;
 }
 
+/**
+ * Node balances of the wallet's own Lightning node.
+ * Values are reported by the node; never recompute them client-side.
+ */
+export interface NodeBalancesResult {
+  onchain_spendable_sats: number;
+  onchain_total_sats: number;
+  lightning_total_sats: number;
+}
+
+/** Auto coin-selection policy when opening an RGB channel (kebab-case, node-side enum). */
+export type RgbFundingUtxoPolicy =
+  | 'single-rgb-anchor'
+  | 'rgb-anchor-with-btc-support'
+  | 'merge-rgb-anchors-with-btc-support';
+
+/** Role of a UTXO in the RGB channel funding transaction. */
+export type RgbFundingUtxoRole = 'rgb-state' | 'fee-support';
+
+/** One exact funding input for `rgb.funding_utxos`. */
+export interface RgbFundingUtxo {
+  txid: string;
+  vout: number;
+  role: RgbFundingUtxoRole;
+}
+
+/** RGB leg of a channel-open request. */
+export interface OpenChannelRgbRequest {
+  /** RGB contract / asset ID placed into the channel. */
+  contract_id: string;
+  /** Amount of RGB asset contributed to the channel. */
+  asset_amount: string | number;
+  /**
+   * Explicit self-hosted color-context template.
+   * Managed wallets derive it from their current node; leave unset unless self-hosting.
+   */
+  color_context_data?: string;
+  /** Override the node's default coin selection. Mutually exclusive with `funding_utxos`. */
+  funding_utxo_policy?: RgbFundingUtxoPolicy | null;
+  /** Exact funding inputs. Mutually exclusive with `funding_utxo_policy`. */
+  funding_utxos?: RgbFundingUtxo[] | null;
+}
+
+/**
+ * Request a Lightning channel open against a peer.
+ *
+ * Amounts and the RGB asset amount are forwarded verbatim to the extension, which
+ * validates them against the node before showing its approval UI. The SDK performs
+ * no pricing or balance arithmetic.
+ */
+export interface OpenChannelRequest {
+  /** Peer node public key. */
+  node_id: string;
+  /** Peer socket address (`host:port`). */
+  address: string;
+  /** Channel capacity in satoshis. */
+  channel_amount_sats: string | number;
+  /** Optional msat pushed to the counterparty on open. */
+  push_to_counterparty_msat?: string;
+  /** Whether the channel is publicly announced. */
+  announce?: boolean;
+  /** Business direction of the channel, used only for the extension's review copy. */
+  channel_direction?: 'buy' | 'sell';
+  /** RGB leg of the open, when the channel carries an asset. */
+  rgb?: OpenChannelRgbRequest;
+}
+
+export interface OpenChannelResult {
+  user_channel_id: string;
+}
+
+export interface CloseChannelRequest {
+  user_channel_id: string;
+  counterparty_node_id: string;
+  /** Request a force close instead of a cooperative close. */
+  force?: boolean;
+}
+
+export interface CloseChannelResult {
+  ok: boolean;
+}
+
+export interface CreateRgbLnInvoiceRequest {
+  contract_id: string;
+  /** RGB asset amount to receive; converted to a decimal string before sending. */
+  asset_amount: string | number;
+  description?: string;
+  /** Invoice expiry in seconds (extension default 3600). */
+  expiry_secs?: number;
+  /**
+   * BTC carrier amount in msat. Omit to let the node auto-calculate and lift it.
+   */
+  btc_carrier_amount_msat?: string;
+}
+
+export interface CreateRgbLnInvoiceResult {
+  invoice: string;
+  /** Authoritative carrier embedded in the invoice (may exceed the requested value). */
+  btc_carrier_amount_msat?: string;
+}
+
+export interface CreateRgbOnchainInvoiceRequest {
+  contract_id: string;
+  /** RGB asset amount to receive; converted to a decimal string before sending. */
+  amount: string | number;
+  /** Invoice expiry in seconds (extension default 30 days). */
+  expiry_secs?: number;
+}
+
+export interface CreateRgbOnchainInvoiceResult {
+  invoice: string;
+}
+
+export interface PayRgbLnInvoiceRequest {
+  /** RGB Lightning invoice (BOLT11 with the RGB extension). */
+  invoice: string;
+  /** Contract ID, shown only in the extension review UI. */
+  contract_id?: string;
+  /** RGB amount, shown only in the extension review UI. */
+  asset_amount?: string;
+}
+
+export interface PayRgbLnInvoiceResult {
+  payment_id?: string;
+  /** Set when the node already had a record for this payment hash. */
+  status?: 'pending';
+  /** True when the extension resolved the call as an already-initiated duplicate payment. */
+  duplicate?: boolean;
+}
+
+export interface CreateBtcHoldInvoiceRequest {
+  /** Amount in millisatoshis (positive integer). */
+  amount_msat: string | number;
+  description?: string;
+  /** Invoice expiry in seconds; the extension caps it at 86400. */
+  expiry_secs?: number;
+}
+
+export interface CreateBtcHoldInvoiceResult {
+  invoice: string;
+  payment_hash: string;
+}
+
+export interface CheckBtcHoldInvoiceRequest {
+  payment_hash: string;
+}
+
+export interface CheckBtcHoldInvoiceResult {
+  /** Lower-cased node payment status (e.g. `pending`, `succeeded`). */
+  status: string;
+  /** Lower-cased payment direction (e.g. `inbound`). */
+  direction: string;
+  /** True while the payer's HTLC is locked and claimable. */
+  htlc_locked: boolean;
+}
+
+export interface ClaimBtcHoldInvoiceRequest {
+  payment_hash: string;
+  /** Explicit preimage. Omit to use the one the extension stored at invoice creation. */
+  preimage?: string;
+  /** Amount to claim in msat. Omit to use the stored invoice amount. */
+  claimable_amount_msat?: string;
+}
+
+export interface ClaimBtcHoldInvoiceResult {
+  ok: boolean;
+}
+
 export interface ConnectResult {
   address: string;
 }

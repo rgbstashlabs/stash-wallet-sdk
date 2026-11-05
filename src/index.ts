@@ -7,8 +7,13 @@
 export { StashWalletClient } from './client';
 export { ChromeExtensionTransport } from './transports/chrome-extension';
 export { InjectedProviderTransport } from './transports/injected-provider';
+export {
+  WALLET_AUTH_REQUIRED_EVENT,
+  REASON_ORIGIN_NOT_AUTHORIZED,
+  notifyAuthRequired,
+} from './transports/auth-required';
 export type { Transport, TransportOptions } from './transports/base';
-export { TransportError, normalizeErrorCode, isKnownErrorCode } from './errors';
+export { TransportError, extractErrorCode, normalizeErrorCode, isKnownErrorCode } from './errors';
 export type { TransportErrorCode } from './errors';
 
 export {
@@ -54,6 +59,15 @@ export {
   MSG_PAY_LIGHTNING_INVOICE,
   MSG_GENERATE_SELL_INVOICE,
   MSG_ACCEPT_NATIVE_SWAP,
+  MSG_CREATE_BTC_HOLD_INVOICE,
+  MSG_CHECK_BTC_HOLD_INVOICE,
+  MSG_CLAIM_BTC_HOLD_INVOICE,
+  MSG_GET_NODE_BALANCES,
+  MSG_REQUEST_OPEN_CHANNEL,
+  MSG_CLOSE_CHANNEL,
+  MSG_CREATE_RGB_LN_INVOICE,
+  MSG_CREATE_RGB_ONCHAIN_INVOICE,
+  MSG_PAY_RGB_LN_INVOICE,
   PUBLIC_PROVIDER_METHODS,
   isPublicProviderMethod,
   PROTOCOL_VERSION,
@@ -79,6 +93,27 @@ export type {
   NodeCredentialResponse,
   PayLightningInvoiceRequest,
   PayLightningInvoiceResponse,
+  NodeBalancesResult,
+  OpenChannelRequest,
+  OpenChannelResult,
+  OpenChannelRgbRequest,
+  RgbFundingUtxo,
+  RgbFundingUtxoPolicy,
+  RgbFundingUtxoRole,
+  CloseChannelRequest,
+  CloseChannelResult,
+  CreateRgbLnInvoiceRequest,
+  CreateRgbLnInvoiceResult,
+  CreateRgbOnchainInvoiceRequest,
+  CreateRgbOnchainInvoiceResult,
+  PayRgbLnInvoiceRequest,
+  PayRgbLnInvoiceResult,
+  CreateBtcHoldInvoiceRequest,
+  CreateBtcHoldInvoiceResult,
+  CheckBtcHoldInvoiceRequest,
+  CheckBtcHoldInvoiceResult,
+  ClaimBtcHoldInvoiceRequest,
+  ClaimBtcHoldInvoiceResult,
   BtcAddressResponse,
   HubChannelsRequest,
   HubChannelInfo,

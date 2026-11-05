@@ -80,4 +80,138 @@ describe('StashWalletClient', () => {
     expect(err.code).toBe('INVALID_PARAMETER');
     expect(err.message).toBe('bad');
   });
+
+  describe('channel / RGB invoice capabilities', () => {
+    it('reads node balances with no payload', async () => {
+      const transport = mockTransport(() => ({
+        onchain_spendable_sats: 1,
+        onchain_total_sats: 2,
+        lightning_total_sats: 3,
+      }));
+      const client = new StashWalletClient(transport);
+      await client.getNodeBalances();
+      expect(transport.send).toHaveBeenCalledWith('GET_NODE_BALANCES');
+    });
+
+    it('forwards channel open parameters verbatim', async () => {
+      const transport = mockTransport(() => ({ user_channel_id: 'uc1' }));
+      const client = new StashWalletClient(transport);
+      const params = {
+        node_id: '02' + 'ab'.repeat(32),
+        address: 'hub.example:9735',
+        channel_amount_sats: 1_000_000,
+        rgb: { contract_id: 'rgb:contract', asset_amount: '100.5' },
+      } as Parameters<typeof client.requestOpenChannel>[0];
+      await expect(client.requestOpenChannel(params)).resolves.toEqual({
+        user_channel_id: 'uc1',
+      });
+      // The SDK must not rewrite amounts; deep equality proves the payload is intact.
+      expect(transport.send).toHaveBeenCalledWith('REQUEST_OPEN_CHANNEL', params);
+    });
+
+    it('sends closeChannel with the requested close mode', async () => {
+      const transport = mockTransport(() => ({ ok: true }));
+      const client = new StashWalletClient(transport);
+      const params = {
+        user_channel_id: 'uc1',
+        counterparty_node_id: '02' + 'cd'.repeat(32),
+        force: true,
+      } as Parameters<typeof client.closeChannel>[0];
+      await expect(client.closeChannel(params)).resolves.toEqual({ ok: true });
+      expect(transport.send).toHaveBeenCalledWith('CLOSE_CHANNEL', params);
+    });
+
+    it('stringifies RGB amounts exactly once for both invoice kinds', async () => {
+      const transport = mockTransport((type) =>
+        type === 'CREATE_RGB_LN_INVOICE'
+          ? { invoice: 'lntbs1', btc_carrier_amount_msat: '1500000' }
+          : { invoice: 'rgb:onchain' },
+      );
+      const client = new StashWalletClient(transport);
+
+      await expect(
+        client.createRgbLnInvoice({
+          contract_id: 'rgb:contract',
+          asset_amount: 42,
+          description: 'swap',
+          expiry_secs: 600,
+          btc_carrier_amount_msat: '1500000',
+        }),
+      ).resolves.toEqual({ invoice: 'lntbs1', btc_carrier_amount_msat: '1500000' });
+      expect(transport.send).toHaveBeenNthCalledWith(1, 'CREATE_RGB_LN_INVOICE', {
+        contract_id: 'rgb:contract',
+        asset_amount: '42',
+        description: 'swap',
+        expiry_secs: 600,
+        btc_carrier_amount_msat: '1500000',
+      });
+
+      await client.createRgbOnchainInvoice({ contract_id: 'rgb:contract', amount: 7 });
+      expect(transport.send).toHaveBeenNthCalledWith(2, 'CREATE_RGB_ONCHAIN_INVOICE', {
+        contract_id: 'rgb:contract',
+        amount: '7',
+        expiry_secs: undefined,
+      });
+    });
+
+    it('pays an RGB LN invoice with display-only metadata', async () => {
+      const transport = mockTransport(() => ({ payment_id: 'p1' }));
+      const client = new StashWalletClient(transport);
+      await client.payRgbLnInvoice({
+        invoice: 'lntbs1rgb',
+        contract_id: 'rgb:contract',
+        asset_amount: '10',
+      });
+      expect(transport.send).toHaveBeenCalledWith('PAY_RGB_LN_INVOICE', {
+        invoice: 'lntbs1rgb',
+        contract_id: 'rgb:contract',
+        asset_amount: '10',
+      });
+    });
+
+    it('keeps hold-invoice amounts as decimal strings', async () => {
+      const transport = mockTransport((type) => {
+        if (type === 'CREATE_BTC_HOLD_INVOICE') return { invoice: 'lntbs1', payment_hash: 'hh' };
+        if (type === 'CHECK_BTC_HOLD_INVOICE') {
+          return { status: 'pending', direction: 'inbound', htlc_locked: true };
+        }
+        return { ok: true };
+      });
+      const client = new StashWalletClient(transport);
+
+      await client.createBtcHoldInvoice({ amount_msat: '250000', expiry_secs: 600 });
+      expect(transport.send).toHaveBeenNthCalledWith(1, 'CREATE_BTC_HOLD_INVOICE', {
+        amount_msat: '250000',
+        description: undefined,
+        expiry_secs: 600,
+      });
+
+      await client.checkBtcHoldInvoice({ payment_hash: 'hh' });
+      expect(transport.send).toHaveBeenNthCalledWith(2, 'CHECK_BTC_HOLD_INVOICE', {
+        payment_hash: 'hh',
+      });
+
+      await client.claimBtcHoldInvoice({ payment_hash: 'hh' });
+      expect(transport.send).toHaveBeenNthCalledWith(3, 'CLAIM_BTC_HOLD_INVOICE', {
+        payment_hash: 'hh',
+        preimage: undefined,
+        claimable_amount_msat: undefined,
+      });
+    });
+
+    it('treats getNodeInfo as an alias of getNodeInfoForLsp', async () => {
+      const transport = mockTransport(() => ({
+        node_base_url: 'https://node',
+        node_id: '02' + 'ef'.repeat(32),
+        network: 'regtest',
+      }));
+      const client = new StashWalletClient(transport);
+
+      await client.getNodeInfo();
+      await client.getNodeInfoForLsp();
+
+      expect(transport.send).toHaveBeenNthCalledWith(1, 'GET_NODE_INFO_FOR_LSP');
+      expect(transport.send).toHaveBeenNthCalledWith(2, 'GET_NODE_INFO_FOR_LSP');
+    });
+  });
 });

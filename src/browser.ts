@@ -5,6 +5,11 @@
 import { StashWalletClient } from './client';
 import { ChromeExtensionTransport } from './transports/chrome-extension';
 import { InjectedProviderTransport } from './transports/injected-provider';
+import {
+  WALLET_AUTH_REQUIRED_EVENT,
+  REASON_ORIGIN_NOT_AUTHORIZED,
+  notifyAuthRequired,
+} from './transports/auth-required';
 import { TransportError } from './errors';
 import { detectProvider, getInjectedProvider } from './provider';
 import {
@@ -19,6 +24,9 @@ export {
   StashWalletClient,
   ChromeExtensionTransport,
   InjectedProviderTransport,
+  WALLET_AUTH_REQUIRED_EVENT,
+  REASON_ORIGIN_NOT_AUTHORIZED,
+  notifyAuthRequired,
   TransportError,
   detectProvider,
   getInjectedProvider,
@@ -40,6 +48,9 @@ const api = {
   StashWalletClient,
   ChromeExtensionTransport,
   InjectedProviderTransport,
+  WALLET_AUTH_REQUIRED_EVENT,
+  REASON_ORIGIN_NOT_AUTHORIZED,
+  notifyAuthRequired,
   TransportError,
   detectProvider,
   getInjectedProvider,
