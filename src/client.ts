@@ -42,6 +42,8 @@ import {
   MSG_IMPORT_CONTRACT,
   MSG_ISSUE_CONTRACT,
   MSG_PAY_LIGHTNING_INVOICE,
+  MSG_LSPS1_BUY_CHANNEL,
+  MSG_LSPS2_REQUEST_INVOICE,
   MSG_PAY_RGB_LN_INVOICE,
   MSG_REQUEST_AUTH_SIGNATURE,
   MSG_REQUEST_NODE_CREDENTIAL,
@@ -473,6 +475,27 @@ export class StashWalletClient {
    * Pay a Lightning invoice. Opens extension approval when required by the wallet.
    * A page-level confirmation is NOT a substitute for wallet approval.
    */
+  lsps1BuyChannel(params: {
+    node_id: string;
+    order_body: string;
+    expected_body_sha256: string;
+    protection_until: string;
+    amount_sat: string;
+  }): Promise<unknown> {
+    return this._transport.send(MSG_LSPS1_BUY_CHANNEL, params);
+  }
+
+  lsps2RequestInvoice(params: {
+    lsp_node_id: string;
+    lsp_address: string;
+    amount_msat: string;
+    expiry_secs: number;
+    max_fee_msat?: string;
+    protection_until: string;
+  }): Promise<{ invoice: unknown; quote: unknown; pay_within_secs: number }> {
+    return this._transport.send(MSG_LSPS2_REQUEST_INVOICE, params);
+  }
+
   payLightningInvoice(params: PayLightningInvoiceRequest): Promise<PayLightningInvoiceResponse> {
     return this._transport.send(MSG_PAY_LIGHTNING_INVOICE, params);
   }
