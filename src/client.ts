@@ -11,6 +11,7 @@
  */
 
 import type { Transport } from './transports/base';
+import type { Lsps1ReadReceipt } from './types';
 import { ChromeExtensionTransport } from './transports/chrome-extension';
 import { InjectedProviderTransport } from './transports/injected-provider';
 import { TransportError } from './errors';
@@ -43,11 +44,15 @@ import {
   MSG_ISSUE_CONTRACT,
   MSG_PAY_LIGHTNING_INVOICE,
   MSG_LSPS1_BUY_CHANNEL,
+  MSG_LSPS1_READ_INFO,
+  MSG_LSPS1_READ_ORDER,
   MSG_LSPS2_REQUEST_INVOICE,
   MSG_PAY_RGB_LN_INVOICE,
   MSG_REQUEST_AUTH_SIGNATURE,
   MSG_REQUEST_NODE_CREDENTIAL,
   MSG_REQUEST_NODE_GRANT_SIGNATURE,
+  MSG_REQUEST_PLATFORM_GRANT,
+  MSG_REQUEST_NODE_REVOKE_SIGNATURE,
   MSG_REQUEST_LSP_REVOKE,
   MSG_REQUEST_OPEN_CHANNEL,
   MSG_REQUEST_SWITCH_NETWORK,
@@ -90,6 +95,10 @@ import type {
   NodeCredentialResponse,
   NodeGrantSignatureRequest,
   NodeGrantSignatureResponse,
+  NodeRevokeSignatureRequest,
+  NodeRevokeSignatureResponse,
+  PlatformGrantRequest,
+  PlatformGrantResponse,
   NodeInfo,
   OpenChannelRequest,
   OpenChannelResult,
@@ -159,6 +168,30 @@ export class StashWalletClient {
     params: NodeGrantSignatureRequest,
   ): Promise<NodeGrantSignatureResponse> {
     return this._transport.send(MSG_REQUEST_NODE_GRANT_SIGNATURE, params);
+  }
+
+  requestPlatformGrant(params: PlatformGrantRequest): Promise<PlatformGrantResponse> {
+    return this._transport.send(MSG_REQUEST_PLATFORM_GRANT, params);
+  }
+
+  /**
+   * Ask the wallet to sign the revocation of a long-lived platform grant.
+   *
+   * Revoking an authorization needs the same wallet that granted it, so this is a dedicated
+   * message: the popup shows the authoritative grant record and the wallet signs
+   * `STASH-NODE-REVOKE-V1|grant_id|node_id|network|timestamp|nonce`.
+   *
+   * The resolved value is the exact `proof` body Cloud expects at
+   * `POST /v3/node-access/grants/{id}/revoke`. Rejecting the request resolves with
+   * `USER_REJECTED` and produces no signing material.
+   *
+   * @throws TransportError with code `USER_REJECTED`; `WALLET_LOCKED`;
+   *   `NODE_NOT_CONFIGURED`; `INVALID_PARAMETER`.
+   */
+  requestNodeRevokeSignature(
+    params: NodeRevokeSignatureRequest,
+  ): Promise<NodeRevokeSignatureResponse> {
+    return this._transport.send(MSG_REQUEST_NODE_REVOKE_SIGNATURE, params);
   }
 
   async requestAuthSignature(params: AuthSignatureRequest): Promise<AuthSignatureResponse> {
@@ -472,6 +505,20 @@ export class StashWalletClient {
   }
 
   /**
+   * Read this wallet's own LSPS1 registry entry and return a wallet-signed
+   * receipt. The dApp must forward the receipt to its backend, never read the
+   * user's node directly.
+   */
+  lsps1ReadInfo(params: { lsp_node_id: string }): Promise<Lsps1ReadReceipt> {
+    return this._transport.send(MSG_LSPS1_READ_INFO, params);
+  }
+
+  /** Read one LSPS1 order from this wallet's node and sign the snapshot. */
+  lsps1ReadOrder(params: { lsp_node_id: string; order_id: string }): Promise<Lsps1ReadReceipt> {
+    return this._transport.send(MSG_LSPS1_READ_ORDER, params);
+  }
+
+  /**
    * Pay a Lightning invoice. Opens extension approval when required by the wallet.
    * A page-level confirmation is NOT a substitute for wallet approval.
    */
@@ -479,6 +526,7 @@ export class StashWalletClient {
     node_id: string;
     order_body: string;
     expected_body_sha256: string;
+    lsp_address?: string;
     protection_until: string;
     amount_sat: string;
   }): Promise<unknown> {
@@ -487,12 +535,12 @@ export class StashWalletClient {
 
   lsps2RequestInvoice(params: {
     lsp_node_id: string;
-    lsp_address: string;
+    lsp_address?: string;
     amount_msat: string;
     expiry_secs: number;
     max_fee_msat?: string;
     protection_until: string;
-  }): Promise<{ invoice: unknown; quote: unknown; pay_within_secs: number }> {
+  }): Promise<{ invoice: unknown; quote: unknown; pay_within_secs: number; payment_hash: string }> {
     return this._transport.send(MSG_LSPS2_REQUEST_INVOICE, params);
   }
 

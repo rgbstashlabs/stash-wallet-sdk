@@ -36,6 +36,83 @@ export interface NodeGrantSignatureResponse {
   challenge_id: string;
 }
 
+export interface PlatformGrantReceipt {
+  node_id: string;
+  apis: string[];
+  expires_at: string;
+  grant_signature: string;
+  grantor_public_key: string;
+  wallet_type: 'stashwallet';
+  network: 'regtest' | 'testnet' | 'mainnet';
+  challenge_id: string;
+}
+
+export interface PlatformGrantRequest {
+  client_public_key: string;
+  apis: string[];
+  grant_ttl_days: number;
+}
+
+export interface PlatformGrantResponse {
+  grant_id: string;
+  owner_id: string;
+  node_id: string;
+  apis: string[];
+  expires_at: string;
+  network: 'regtest' | 'testnet' | 'mainnet';
+  grant_signature: string;
+  grantor_public_key: string;
+  wallet_type: 'stashwallet';
+  challenge_id: string;
+  grant_ttl_days?: number;
+}
+
+/**
+ * Parameters passed to StashWalletClient.requestNodeRevokeSignature().
+ *
+ * `node_id` is the **Cloud node id** (32 lowercase hex), not a Lightning node pubkey: grants
+ * and their revocations are scoped to a Cloud node, and Cloud rebuilds the signed string from
+ * its own record. `display` is optional context a dApp may send for compatibility; the
+ * confirmation popup always renders the authoritative record instead of this copy.
+ */
+export interface NodeRevokeSignatureRequest {
+  /** Cloud grant id (UUID, max 36 chars). */
+  grant_id: string;
+  /** Cloud node id — 32 lowercase hex characters. */
+  node_id: string;
+  network: 'regtest' | 'testnet' | 'mainnet';
+  /** Optional expiry hint; the signed review uses the record's own value. */
+  expires_at?: string;
+  /** Optional caller-provided context; never rendered as the authoritative review. */
+  display?: {
+    platform_id?: string;
+    apis?: string[];
+    capabilities?: string[];
+  };
+}
+
+/**
+ * Wallet-signed proof of a revocation intent.
+ *
+ * Submitted verbatim to Cloud (`POST /v3/node-access/grants/{id}/revoke` body) or forwarded by
+ * the platform. `signature` is 128 lowercase hex characters (compact secp256k1 `r||s` over
+ * SHA-256 of `STASH-NODE-REVOKE-V1|grant_id|node_id|network|timestamp|nonce`);
+ * `public_key` is the compressed 33-byte grantor key (66 hex).
+ */
+export interface NodeRevokeSignatureResponse {
+  grant_id: string;
+  public_key: string;
+  /** Unix seconds the wallet signed at; Cloud accepts ±300s. */
+  timestamp: number;
+  /** Single-use even-length lowercase hex nonce, 32–128 chars. */
+  nonce: string;
+  /** 128 lowercase hex characters. */
+  signature: string;
+}
+
+/** Convenience alias: the proof itself is the response body Cloud expects. */
+export type NodeRevokeProof = NodeRevokeSignatureResponse;
+
 /** Auth V1 request — explicit version required. */
 export interface AuthSignatureRequestV1 {
   signature_version: 1;
@@ -431,6 +508,26 @@ export interface SendRGBResult {
 
 export interface AcceptNativeSwapRequest {
   swap_string: string;
+}
+
+/**
+ * Wallet-signed proof of a read performed against the wallet's own node.
+ *
+ * `payload_json` is the raw node response; `signature` covers the canonical
+ * string `STASH-LSPS1-READ-V1|network|node_id|lsp_node_id|resource|request_key|payload_sha256|read_at|nonce`.
+ */
+export interface Lsps1ReadReceipt {
+  node_id: string;
+  lsp_node_id: string;
+  resource: 'info' | 'order';
+  request_key: string;
+  payload_json: string;
+  payload_sha256: string;
+  read_at: string;
+  nonce: string;
+  network: string;
+  signer_public_key: string;
+  signature: string;
 }
 
 /** Events emitted by the injected provider */

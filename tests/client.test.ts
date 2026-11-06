@@ -81,6 +81,64 @@ describe('StashWalletClient', () => {
     expect(err.message).toBe('bad');
   });
 
+  it('forwards LSPS2 invoices without requiring a P2P address', async () => {
+    const transport = mockTransport(() => ({
+      invoice: { invoice: 'lnbc1' },
+      quote: { fee_msat: '1000' },
+      pay_within_secs: 3600,
+      payment_hash: 'ab'.repeat(32),
+    }));
+    const client = new StashWalletClient(transport);
+    const params = {
+      lsp_node_id: '02' + 'cd'.repeat(32),
+      amount_msat: '50000000',
+      expiry_secs: 3600,
+      max_fee_msat: '1000000',
+      protection_until: '2027-01-01T00:00:00.000Z',
+    };
+
+    await expect(client.lsps2RequestInvoice(params)).resolves.toMatchObject({
+      payment_hash: 'ab'.repeat(32),
+    });
+    expect(transport.send).toHaveBeenCalledWith('LSPS2_REQUEST_INVOICE', params);
+  });
+
+  it('forwards platform grant requests through the public bridge', async () => {
+    const transport = mockTransport(() => ({ grant_id: 'grant-1' }));
+    const client = new StashWalletClient(transport);
+    const params = {
+      client_public_key: '04' + '11'.repeat(64),
+      apis: ['GET /api/v1/lsps2/options'],
+      grant_ttl_days: 30,
+    };
+
+    await expect(client.requestPlatformGrant(params)).resolves.toEqual({ grant_id: 'grant-1' });
+    expect(transport.send).toHaveBeenCalledWith('REQUEST_PLATFORM_GRANT', params);
+  });
+
+  it('forwards node revocation signatures through the public bridge', async () => {
+    const proof = {
+      grant_id: 'grant-1',
+      public_key: '02' + 'ab'.repeat(32),
+      timestamp: 1_760_000_000,
+      nonce: 'cd'.repeat(16),
+      signature: 'ef'.repeat(64),
+    };
+    const transport = mockTransport(() => proof);
+    const client = new StashWalletClient(transport);
+    const params = {
+      grant_id: 'grant-1',
+      node_id: 'ab'.repeat(16),
+      network: 'testnet' as const,
+      expires_at: '2027-01-01T00:00:00.000Z',
+      display: { platform_id: 'rgbdex', apis: ['GET /api/v1/lsps2/options'] },
+    };
+
+    await expect(client.requestNodeRevokeSignature(params)).resolves.toEqual(proof);
+    // The proof must reach Cloud verbatim: no field is renamed, dropped, or recomputed.
+    expect(transport.send).toHaveBeenCalledWith('REQUEST_NODE_REVOKE_SIGNATURE', params);
+  });
+
   describe('channel / RGB invoice capabilities', () => {
     it('reads node balances with no payload', async () => {
       const transport = mockTransport(() => ({
