@@ -327,6 +327,22 @@ export interface OpenChannelResult {
   user_channel_id: string;
 }
 
+/**
+ * Ask the wallet to open its channel/peer setup UI with this peer prefilled.
+ * The wallet never connects or opens anything until the user submits the form.
+ */
+export interface ChannelSetupRequest {
+  node_id: string;
+  address: string;
+  /** Which wallet form to show first. Defaults to the channel form. */
+  view?: 'connect' | 'open';
+}
+
+export interface ChannelSetupResult {
+  /** False when the browser refused to open the wallet UI without a user gesture. */
+  opened: boolean;
+}
+
 export interface CloseChannelRequest {
   user_channel_id: string;
   counterparty_node_id: string;

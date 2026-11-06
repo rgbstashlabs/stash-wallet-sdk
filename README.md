@@ -107,6 +107,7 @@ extension; a missing scope rejects with `ORIGIN_NOT_AUTHORIZED`.
 | `createRgbLnInvoice(params)` | `CREATE_RGB_LN_INVOICE` | `read_channels` |
 | `createRgbOnchainInvoice(params)` | `CREATE_RGB_ONCHAIN_INVOICE` | `read_channels` |
 | `requestOpenChannel(params)` | `REQUEST_OPEN_CHANNEL` | `sign` |
+| `openChannelSetup(params)` | `OPEN_CHANNEL_SETUP` | `read_channels` |
 | `closeChannel(params)` | `CLOSE_CHANNEL` | `sign` |
 | `payRgbLnInvoice(params)` | `PAY_RGB_LN_INVOICE` | `sign` |
 | `createBtcHoldInvoice(params)` | `CREATE_BTC_HOLD_INVOICE` | `sign` |

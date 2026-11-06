@@ -55,6 +55,7 @@ import {
   MSG_REQUEST_NODE_REVOKE_SIGNATURE,
   MSG_REQUEST_LSP_REVOKE,
   MSG_REQUEST_OPEN_CHANNEL,
+  MSG_OPEN_CHANNEL_SETUP,
   MSG_REQUEST_SWITCH_NETWORK,
   MSG_SEND_BITCOIN,
   MSG_SEND_RGB,
@@ -68,6 +69,8 @@ import type {
   BtcAddressResponse,
   CheckBtcHoldInvoiceRequest,
   CheckBtcHoldInvoiceResult,
+  ChannelSetupRequest,
+  ChannelSetupResult,
   ClaimBtcHoldInvoiceRequest,
   ClaimBtcHoldInvoiceResult,
   CloseChannelRequest,
@@ -292,6 +295,22 @@ export class StashWalletClient {
    */
   requestOpenChannel(params: OpenChannelRequest): Promise<OpenChannelResult> {
     return this._transport.send(MSG_REQUEST_OPEN_CHANNEL, params);
+  }
+
+  /**
+   * Open the wallet's channel setup UI against a peer, prefilled.
+   *
+   * Peak convenience for LSP pages: `view: 'connect'` starts on the connect-peer
+   * form, `view: 'open'` starts on the channel form. The user still submits the
+   * action inside the wallet.
+   *
+   * Requires the `read_channels` scope.
+   *
+   * @throws TransportError with code `ORIGIN_NOT_AUTHORIZED`; `INVALID_PARAMETER`;
+   *   `WALLET_LOCKED`; `NODE_NOT_CONFIGURED`.
+   */
+  openChannelSetup(params: ChannelSetupRequest): Promise<ChannelSetupResult> {
+    return this._transport.send(MSG_OPEN_CHANNEL_SETUP, params);
   }
 
   /**
