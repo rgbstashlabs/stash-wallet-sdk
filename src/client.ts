@@ -47,6 +47,8 @@ import {
   MSG_LSPS1_READ_INFO,
   MSG_LSPS1_READ_ORDER,
   MSG_LSPS2_REQUEST_INVOICE,
+  MSG_LSPS2_RGB_QUOTE,
+  MSG_LSPS2_REQUEST_RGB_INVOICE,
   MSG_PAY_RGB_LN_INVOICE,
   MSG_REQUEST_AUTH_SIGNATURE,
   MSG_REQUEST_NODE_CREDENTIAL,
@@ -548,6 +550,7 @@ export class StashWalletClient {
     lsp_address?: string;
     protection_until: string;
     amount_sat: string;
+    channel_kind?: 'btc' | 'rgb';
   }): Promise<unknown> {
     return this._transport.send(MSG_LSPS1_BUY_CHANNEL, params);
   }
@@ -561,6 +564,35 @@ export class StashWalletClient {
     protection_until: string;
   }): Promise<{ invoice: unknown; quote: unknown; pay_within_secs: number; payment_hash: string }> {
     return this._transport.send(MSG_LSPS2_REQUEST_INVOICE, params);
+  }
+
+  lsps2RgbQuote(params: {
+    lsp_node_id: string;
+    lsp_address?: string;
+    contract_id: string;
+    asset_amount: string;
+    lsp_asset_balance: string;
+    lsp_balance_sat: string;
+    btc_carrier_amount_msat?: string;
+    protection_until: string;
+  }): Promise<{ quote: unknown; offering: unknown }> {
+    return this._transport.send(MSG_LSPS2_RGB_QUOTE, params);
+  }
+
+  lsps2RequestRgbInvoice(params: {
+    lsp_node_id: string;
+    lsp_address?: string;
+    contract_id: string;
+    asset_amount: string;
+    lsp_asset_balance: string;
+    lsp_balance_sat: string;
+    btc_carrier_amount_msat?: string;
+    max_fee_sat: string;
+    expiry_secs: number;
+    description?: string;
+    protection_until: string;
+  }): Promise<unknown> {
+    return this._transport.send(MSG_LSPS2_REQUEST_RGB_INVOICE, params);
   }
 
   payLightningInvoice(params: PayLightningInvoiceRequest): Promise<PayLightningInvoiceResponse> {
