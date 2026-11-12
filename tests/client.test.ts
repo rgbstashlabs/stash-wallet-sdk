@@ -34,6 +34,38 @@ describe('StashWalletClient', () => {
     expect(transport.send).toHaveBeenCalledWith('ACCEPT_NATIVE_SWAP', { swap_string: 'swap' });
   });
 
+  it('forwards a multi-offer batch through one ACCEPT_NATIVE_SWAP_BATCH message', async () => {
+    const transport = mockTransport((type) => {
+      if (type === 'ACCEPT_NATIVE_SWAP_BATCH') return { accepted_count: 2 };
+      throw new Error(`unexpected ${type}`);
+    });
+    const client = new StashWalletClient(transport);
+    const params = {
+      execution_id: 'exec-1',
+      expires_at: 1_800_000_000,
+      offers: [
+        { swap_string: 'swap-a', peer: { node_id: '02aa', address: 'maker-a:9735' }, leg_ref: 'leg-a' },
+        { swap_string: 'swap-b', peer: { node_id: '02bb', address: 'maker-b:9735' }, leg_ref: 'leg-b' },
+      ],
+    };
+
+    await expect(client.acceptNativeSwapBatch(params)).resolves.toEqual({ accepted_count: 2 });
+    expect(transport.send).toHaveBeenCalledWith('ACCEPT_NATIVE_SWAP_BATCH', params);
+  });
+
+  it('forwards peer connection parameters without opening a channel', async () => {
+    const transport = mockTransport(() => ({ ok: true }));
+    const client = new StashWalletClient(transport);
+    const params = {
+      node_id: '02' + 'ab'.repeat(32),
+      address: 'hub.example:9735',
+      persist: true,
+    };
+
+    await expect(client.connectPeer(params)).resolves.toEqual({ ok: true });
+    expect(transport.send).toHaveBeenCalledWith('CONNECT_PEER', params);
+  });
+
   it('rejects auth requests missing signature_version before transport', async () => {
     const transport = mockTransport(() => ({}));
     const client = new StashWalletClient(transport);

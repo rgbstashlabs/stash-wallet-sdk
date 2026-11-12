@@ -186,9 +186,13 @@ export interface ProviderCapabilities {
   protocolVersion: string;
   providerVersion: string;
   canConnect: boolean;
+  /** The provider may connect the wallet's node to a supplied peer. */
+  canConnectPeer?: boolean;
   canIssue: boolean;
   canClaim: boolean;
   canSwap: boolean;
+  /** Batch native-swap accept (one popup, one confirmation). */
+  canAcceptNativeSwapBatch?: boolean;
   canLsp: boolean;
   /** Provider/platform revocation only; Cloud idle protection is a separate API. */
   canLspRevoke: boolean;
@@ -239,6 +243,20 @@ export interface HubChannelInfo {
   is_usable: boolean;
   is_rgb: boolean;
   rgb_contract_id?: string;
+}
+
+/** Connect the wallet's Lightning node to a peer without opening a channel. */
+export interface ConnectPeerRequest {
+  /** Compressed secp256k1 node public key (66 lowercase hex characters). */
+  node_id: string;
+  /** Peer socket address (`host:port`, with bracketed IPv6 supported). */
+  address: string;
+  /** Keep the peer across node restarts. Defaults to true. */
+  persist?: boolean;
+}
+
+export interface ConnectPeerResult {
+  ok: boolean;
 }
 
 export interface GenerateSellInvoiceRequest {
@@ -524,6 +542,21 @@ export interface SendRGBResult {
 
 export interface AcceptNativeSwapRequest {
   swap_string: string;
+}
+
+export interface AcceptNativeSwapBatchOffer {
+  swap_string: string;
+  peer: {
+    node_id: string;
+    address: string;
+  };
+  leg_ref?: string;
+}
+
+export interface AcceptNativeSwapBatchRequest {
+  execution_id: string;
+  expires_at: number;
+  offers: AcceptNativeSwapBatchOffer[];
 }
 
 /**

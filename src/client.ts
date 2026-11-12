@@ -18,11 +18,13 @@ import { TransportError } from './errors';
 import { assertAuthSignatureRequest } from './protocol/auth';
 import {
   MSG_ACCEPT_NATIVE_SWAP,
+  MSG_ACCEPT_NATIVE_SWAP_BATCH,
   MSG_AUTO_IMPORT_CONTRACT,
   MSG_CHECK_BTC_HOLD_INVOICE,
   MSG_CLAIM_BTC_HOLD_INVOICE,
   MSG_CLOSE_CHANNEL,
   MSG_CONNECT,
+  MSG_CONNECT_PEER,
   MSG_CREATE_BTC_HOLD_INVOICE,
   MSG_CREATE_RGB_LN_INVOICE,
   MSG_CREATE_RGB_ONCHAIN_INVOICE,
@@ -65,6 +67,7 @@ import {
 } from './protocol/messages';
 import type {
   AcceptNativeSwapRequest,
+  AcceptNativeSwapBatchRequest,
   AccountsResult,
   AuthSignatureRequest,
   AuthSignatureResponse,
@@ -77,6 +80,8 @@ import type {
   ClaimBtcHoldInvoiceResult,
   CloseChannelRequest,
   CloseChannelResult,
+  ConnectPeerRequest,
+  ConnectPeerResult,
   ConnectResult,
   ContractBalanceResult,
   ContractKnownResult,
@@ -273,6 +278,16 @@ export class StashWalletClient {
   }
 
   /**
+   * Connect the wallet node to a peer without opening or funding a channel.
+   *
+   * Silent — no extension popup. Requires the `read_channels` scope. The extension
+   * validates the node id and socket address before forwarding them to the node.
+   */
+  connectPeer(params: ConnectPeerRequest): Promise<ConnectPeerResult> {
+    return this._transport.send(MSG_CONNECT_PEER, params);
+  }
+
+  /**
    * Read the wallet node's BTC balances (on-chain spendable/total + Lightning total).
    *
    * Requires the `read_channels` scope. Silent — no extension popup.
@@ -464,6 +479,10 @@ export class StashWalletClient {
 
   acceptNativeSwap(params: AcceptNativeSwapRequest): Promise<void> {
     return this._transport.send(MSG_ACCEPT_NATIVE_SWAP, params);
+  }
+
+  acceptNativeSwapBatch(params: AcceptNativeSwapBatchRequest): Promise<void> {
+    return this._transport.send(MSG_ACCEPT_NATIVE_SWAP_BATCH, params);
   }
 
   connect(): Promise<ConnectResult> {

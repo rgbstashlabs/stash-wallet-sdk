@@ -104,6 +104,7 @@ extension; a missing scope rejects with `ORIGIN_NOT_AUTHORIZED`.
 | `getNodeInfoForLsp()` | `GET_NODE_INFO_FOR_LSP` | `read_channels` |
 | `getNodeBalances()` | `GET_NODE_BALANCES` | `read_channels` |
 | `getHubChannels(params?)` | `GET_HUB_CHANNELS` | `read_channels` |
+| `connectPeer(params)` | `CONNECT_PEER` | `read_channels` |
 | `createRgbLnInvoice(params)` | `CREATE_RGB_LN_INVOICE` | `read_channels` |
 | `createRgbOnchainInvoice(params)` | `CREATE_RGB_ONCHAIN_INVOICE` | `read_channels` |
 | `requestOpenChannel(params)` | `REQUEST_OPEN_CHANNEL` | `sign` |
